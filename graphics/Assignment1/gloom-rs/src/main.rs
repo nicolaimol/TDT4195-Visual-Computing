@@ -6,6 +6,7 @@
 #![allow(unused_mut)]
 #![allow(unused_unsafe)]
 #![allow(unused_variables)]
+#![allow(unused_assignments)]
 
 extern crate nalgebra_glm as glm;
 use std::sync::{Arc, Mutex, RwLock};

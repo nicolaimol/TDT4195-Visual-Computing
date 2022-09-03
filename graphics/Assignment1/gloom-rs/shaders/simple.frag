@@ -15,7 +15,5 @@ void main()
     } else {
         color = white;
     }
-    
-   //color = active;
 }
 
