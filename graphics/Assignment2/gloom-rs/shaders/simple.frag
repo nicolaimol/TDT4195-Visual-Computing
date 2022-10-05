@@ -1,10 +1,13 @@
 #version 430 core
 
+in layout(location = 0) vec4 vertexColor;
+
 out vec4 color;
+
 
 void main()
 {
-
+    /*
     vec4 white = vec4(1.0f, 1.0f, 1.0f, 1.0f);
     vec4 black = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -15,5 +18,8 @@ void main()
     } else {
         color = white;
     }
+    */
+
+    color = vertexColor;
 }
 

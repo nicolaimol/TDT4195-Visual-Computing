@@ -1,5 +1,4 @@
 // Uncomment these following global attributes to silence most warnings of "low" interest:
-
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 #![allow(unreachable_code)]
@@ -28,6 +27,7 @@ use glutin::event_loop::ControlFlow;
 // initial window size
 const INITIAL_SCREEN_W: u32 = 800;
 const INITIAL_SCREEN_H: u32 = 600;
+
 
 // == // Helper functions to make interacting with OpenGL a little bit prettier. You *WILL* need these! // == //
 
@@ -59,7 +59,7 @@ fn offset<T>(n: u32) -> *const c_void {
 // ptr::null()
 
 // == // Generate your VAO here
-unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>) -> u32 {
+unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>, colors: &Vec<f32>) -> u32 {
 
     let mut vao_id = 0;
     gl::GenVertexArrays(1, &mut vao_id);
@@ -87,23 +87,48 @@ unsafe fn create_vao(vertices: &Vec<f32>, indices: &Vec<u32>) -> u32 {
         gl::STATIC_DRAW,
     );
 
+    let vertices_index = 0;
+    gl::EnableVertexAttribArray(vertices_index);
+    gl::VertexAttribPointer(
+        vertices_index,
+        3, //[x,y,z],
+        gl::FLOAT,
+        gl::FALSE,
+        0, // same type for all values
+        ptr::null()
+    );
+
+    let mut buffer_color_id = 0;
+    gl::GenBuffers(1, &mut buffer_color_id);
+    gl::BindBuffer(gl::ARRAY_BUFFER, buffer_color_id);
+    gl::BufferData(
+        gl::ARRAY_BUFFER,
+        byte_size_of_array(colors),
+        pointer_to_array(colors),
+        gl::STATIC_DRAW
+    );
+
+    let color_index = 1;
+    gl::EnableVertexAttribArray(color_index);
+    gl::VertexAttribPointer(
+        color_index,
+        4,
+        gl::FLOAT, 
+        gl::FALSE, 
+        0, 
+        ptr::null()
+    );
+
+    
+
+
+    /*
+    
+
     let index = 0;
     gl::EnableVertexAttribArray(index);
+    */
 
-
-    gl::VertexAttribPointer(
-        0, // Temp value, don't know what this is. ID? Max 16 probably
-        3, // 3 coordinates -> [x, y, z]
-        gl::FLOAT,
-        gl::FALSE,   // Whether OpenGL should normalize the values in the buffer
-        0, // All floats, so OpenGL fixes this. Specify a value != 0 if there are multiple types (e.g. float, integers) in one entry
-        ptr::null(), // 0 pointer?
-    );
-     
-
-    // gl::BindVertexArray(index);
-
-    // We do not need to call gl::VertexAttribPointer() to set up the index buffer
 
     return vao_id;
 0
@@ -114,7 +139,7 @@ fn main() {
     let el = glutin::event_loop::EventLoop::new();
     let wb = glutin::window::WindowBuilder::new()
         .with_title("Gloom-rs")
-        .with_resizable(true)
+        .with_resizable(false)
         .with_inner_size(glutin::dpi::LogicalSize::new(
             INITIAL_SCREEN_W,
             INITIAL_SCREEN_H,
@@ -151,7 +176,7 @@ fn main() {
             c
         };
 
-        let mut window_aspect_ratio = INITIAL_SCREEN_W as f32 / INITIAL_SCREEN_H as f32;
+        //let mut window_aspect_ratio = INITIAL_SCREEN_W as f32 / INITIAL_SCREEN_H as f32;
 
         // Set up openGL
         unsafe {
@@ -177,8 +202,107 @@ fn main() {
             );
         }
 
+        
+        // in different z
+        /*
+        let vertices: Vec<f32> = vec![
+            -0.0, 0.6, 0.2, // 0 top center
+            0.3, 0.0, 0.2, // 1 left center
+            -0.3, 0.0, 0.2, // 2 right center
+
+            0.6 ,0.0, 0.4, // 3 bottom right
+            0.9 , 0.6, 0.4, // 4 right right
+            0.3, 0.6, 0.4, // 5 left right
+
+            -0.6 ,0.0, 0.0, // 6 bottom left
+            -0.9 , 0.6, 0.0, // 7 right left
+            -0.3, 0.6, 0.0, // 8 left left
+
+            -0.45, 0.0, -0.2, // 9 top lower left
+            -0.75, -0.6, -0.2, // 10 left lower left
+            -0.15, -0.6, -0.2, // 11 rigth lower left
+
+
+            0.45, 0.0, -0.4, // 12 top lower right
+            0.75, -0.6, -0.4, // 13 right lower right
+            0.15, -0.6, -0.4, // 14 left lower right
+
+        ];
+    
+
+        let indices: Vec<u32> = vec![
+            2, 1, 0, 
+            3, 4, 5,
+            6, 8, 7,
+            9, 10, 11,
+            12, 14, 13,
+        ];
+        /*
+        let colors: Vec<f32> = vec![
+            1.0, 0.0, 1.0, 0.4, //      Center 0
+            0.0, 1.0, 1.0, 0.4, //      Left center 1
+            1.0, 1.0, 0.0, 0.4, //      Right center 2
+            0.0, 1.0, 1.0, 0.4, //      Bottom most left 3
+            1.0, 0.0, 1.0, 0.4, //      Bottom left 4
+            1.0, 1.0, 0.0, 0.4, //      Bottom a bit left 5
+            0.0, 1.0, 1.0, 0.4, //      Bottom a bit right 6
+            1.0, 0.0, 1.0, 0.4, //      Bottom right 7
+            1.0, 1.0, 0.0, 0.4, //      Bottom most right 8
+            1.0, 0.0, 1.0, 0.4, //      Center 0
+            0.0, 1.0, 1.0, 0.4, //      Left center 1
+            1.0, 1.0, 0.0, 0.4, //      Right center 2
+            0.0, 1.0, 1.0, 0.4, //      Bottom most left 3
+            1.0, 0.0, 1.0, 0.4, //      Bottom left 4
+            1.0, 1.0, 0.0, 0.4, //      Bottom a bit left 5
+        ];
+        */
+
+        /*
+        let vertices: Vec<f32> = vec![
+            0.0, 0.0, 0.0, //       Center 0
+            -0.5, 0.0, -0.5, //     Left center 1
+            0.5, 0.0, 0.5, //       Right center 2
+            -0.75, -0.5, -0.5, //   Bottom most left 3
+            -0.25, -0.5, 0.0, //    Bottom left 4
+            -0.10, -0.5, 0.5, //    Bottom a bit left 5
+            0.10, -0.5, -0.5, //    Bottom a bit right 6
+            0.25, -0.5, 0.0, //     Bottom right 7
+            0.75, -0.5, 0.5, //     Bottom most right 8
+        ];
+
+        let indices: Vec<u32> = vec![
+            1, 3, 6, // Bottom left triangle
+            0, 4, 7, // Bottom center triangle
+            2, 5, 8, // Bottom right triangle
+        ];
+        */
+        // One RGBA value per vertex in vertices i.e. 4 values here per 3 values in vertices
+        // The triangle-indexes given by indicies are equal here
+        let colors: Vec<f32> = vec![
+            1.0, 1.0, 1.0, 0.4,
+            1.0, 0.0, 1.0, 0.4,
+            1.0, 0.0, 1.0, 0.4,
+
+            1.0, 1.0, 1.0, 0.4,
+            0.0, 1.0, 1.0, 0.4,
+            0.0, 1.0, 1.0, 0.4,
+            
+            1.0, 1.0, 1.0, 0.4,
+            1.0, 1.0, 0.0, 0.4,
+            1.0, 1.0, 0.0, 0.4,
+            
+            
+            1.0, 1.0, 1.0, 0.4,
+            0.0, 1.0, 1.0, 0.4,
+            0.0, 1.0, 1.0, 0.4,
+            
+            0.0, 0.0, 0.0, 0.4,
+            1.0, 1.0, 1.0, 0.4,
+            1.0, 1.0, 1.0, 0.4,
+        ];
+         */
+
         /* 
-        //Task 1 data
         let vertices: Vec<f32> = vec![
             -0.0, 0.6, 0.0, // 0 top center
             0.3, 0.0, 0.0, // 1 left center
@@ -191,39 +315,82 @@ fn main() {
             -0.6 ,0.0, 0.0, // 6 bottom left
             -0.9 , 0.6, 0.0, // 7 right left
             -0.3, 0.6, 0.0, // 8 left left
-
-            -0.45, 0.0, 0.0, // 9 top lower left
-            -0.75, -0.6, 0.0, // 10 left lower left
-            -0.15, -0.6, 0.0, // 11 rigth lower left
-
-
-            0.45, 0.0, 0.0, // 12 top lower right
-            0.75, -0.6, 0.0, // 13 right lower right
-            0.15, -0.6, 0.0, // 14 left lower right
-
         ];
-    
 
         let indices: Vec<u32> = vec![
             2, 1, 0, 
             3, 4, 5,
             6, 8, 7,
-            9, 10, 11,
-            12, 14, 13,
-        ];*/
+        ];
+
+        let colors: Vec<f32> = vec![
+            1.0, 1.0, 1.0, 0.4,
+            1.0, 0.0, 1.0, 0.4,
+            1.0, 0.0, 1.0, 0.4,
+
+            1.0, 1.0, 1.0, 0.4,
+            0.0, 1.0, 1.0, 0.4,
+            0.0, 1.0, 1.0, 0.4,
+            
+            1.0, 1.0, 1.0, 0.4,
+            1.0, 1.0, 0.0, 0.4,
+            1.0, 1.0, 0.0, 0.4,
+        ];
+        */
 
         let vertices: Vec<f32> = vec![
-            0.6, -0.8, -1.2,
-            0.0, 0.4, 0.0,
-            -0.8, 0.2, 1.2
-        ];
+            -0.5, -0.5, 0.6,
+            0.5, 0.5, 0.6,
+            0.0, 0.7, 0.6,
 
+            0.0, 0.0, -0.5,
+            0.8, 0.8, -0.5,
+            0.2, 0.7, -0.5,
+
+            -0.8, -0.8, -0.3,
+            0.4, 0.4, -0.3,
+            -0.4, 0.7, -0.3,
+        ];
         let indices: Vec<u32> = vec![
             0, 1, 2,
+            6, 7, 8,
+            
+            3, 4, 5,
+        ];
+        let colors: Vec<f32> = vec![
+            0.0, 1.0, 0.0, 0.5,
+            0.0, 1.0, 0.0, 0.5,
+            0.0, 1.0, 0.0, 0.5,
+
+            0.0, 0.0, 1.0, 0.5,
+            0.0, 0.0, 1.0, 0.5,
+            0.0, 0.0, 1.0, 0.5,
+
+            1.0, 0.0, 0.0, 0.5,
+            1.0, 0.0, 0.0, 0.5,
+            1.0, 0.0, 0.0, 0.5,
         ];
 
+        
+
+        let translate_z_index: glm::Mat4 = glm::mat4(
+            1.0, 0.0, 0.0, 0.0, //
+            0.0, 1.0, 0.0, 0.0, //
+            // First scale the z-axis so that [-1, 1] -> [-49.5, 49.5]. Then we translate the z-axis -50.5 to [-100, -1].
+            0.0, 0.0, 1.0, -1.0, //
+            0.0, 0.0, 0.0, 1.0, //
+        );
+
+        let perspective: glm::Mat4 = glm::perspective(
+            (INITIAL_SCREEN_W as f32) / (INITIAL_SCREEN_H as f32), // Aspect ratio = width/height
+            (60.0 * 3.14) / 180.0,                 // 60 degress FOV, but the function uses radians
+            1.0,                                   //
+            100.0,                                 //
+        );
+
+
         // == // Set up your VAO around here
-        let vao_id = unsafe { create_vao(&vertices, &indices) };
+        let vao_id = unsafe { create_vao(&vertices, &indices, &colors) };
 
         // == // Set up your shaders here
 
@@ -235,24 +402,18 @@ fn main() {
                 .activate();
         };
 
-
-        // Basic usage of shader helper:
-        // The example code below creates a 'shader' object.
-        // It which contains the field `.program_id` and the method `.activate()`.
-        // The `.` in the path is relative to `Cargo.toml`.
-        // This snippet is not enough to do the exercise, and will need to be modified (outside
-        // of just using the correct path), but it only needs to be called once
-
-        /*
-        let simple_shader = unsafe {
-            shader::ShaderBuilder::new()
-                .attach_file("./path/to/simple/shader.file")
-                .link()
-        };
-        */
-
         // Used to demonstrate keyboard handling for exercise 2.
-        let mut _arbitrary_number = 0.0; // feel free to remove
+        //let mut _arbitrary_number = 0.0; // feel free to remove
+
+        let mut x = 0.0;
+        let mut y = 0.0;
+        let mut z = -2.0;
+        let mut yaw = 0.0; // Left-right rotation (parallell to the floor)
+        let mut pitch = 0.0; // Up-down rotation
+
+        let mut eta: Vec<f32> = vec![
+            0.0, 0.0, -2.0, 0.0, 0.0
+        ];
 
         // The main rendering loop
         let first_frame_time = std::time::Instant::now();
@@ -264,33 +425,59 @@ fn main() {
             let delta_time = now.duration_since(prevous_frame_time).as_secs_f32();
             prevous_frame_time = now;
 
-            // Handle resize events
-            if let Ok(mut new_size) = window_size.lock() && new_size.2 {
-                context.resize(glutin::dpi::PhysicalSize::new(new_size.0, new_size.1));
-                window_aspect_ratio = new_size.0 as f32 / new_size.1 as f32;
-                (*new_size).2 = false;
-                println!("Resized");
-                unsafe { gl::Viewport(0, 0, new_size.0 as i32, new_size.1 as i32); }
-            } 
+            let z_speed = 0.8;
+            let x_speed = 2.0;
+            let y_speed = 2.0;
 
-            // Handle keyboard input
             if let Ok(keys) = pressed_keys.lock() {
                 for key in keys.iter() {
                     match key {
-                        // The `VirtualKeyCode` enum is defined here:
-                        //    https://docs.rs/winit/0.25.0/winit/event/enum.VirtualKeyCode.html
                         VirtualKeyCode::A => {
-                            _arbitrary_number += delta_time;
+                            x += delta_time * x_speed;
                         }
                         VirtualKeyCode::D => {
-                            _arbitrary_number -= delta_time;
+                            x -= delta_time * x_speed;
                         }
-
-                        // default handler:
+                        VirtualKeyCode::W => {
+                            z += delta_time * z_speed;
+                        }
+                        VirtualKeyCode::S => {
+                            z -= delta_time * z_speed;
+                        }
+                        VirtualKeyCode::LShift => {
+                            y -= delta_time * y_speed;
+                        }
+                        VirtualKeyCode::LControl => {
+                            y += delta_time * y_speed;
+                        }
+                        VirtualKeyCode::Up => {
+                            pitch += delta_time;
+                        }
+                        VirtualKeyCode::Down => {
+                            pitch -= delta_time;
+                        }
+                        VirtualKeyCode::Right => {
+                            yaw += delta_time;
+                        }
+                        VirtualKeyCode::Left => {
+                            yaw -= delta_time;
+                        }
                         _ => {}
                     }
                 }
             }
+
+            // Handle resize events
+            /*if let Ok(mut new_size) = window_size.lock() && new_size.2 {
+                context.resize(glutin::dpi::PhysicalSize::new(new_size.0, new_size.1));
+                window_aspect_ratio = new_size.0 as f32 / new_size.1 as f32;
+                (*new_ size).2 = false;
+                println!("Resized");
+                unsafe { gl::Viewport(0, 0, new_size.0 as i32, new_size.1 as i32); }
+            } 
+            */
+
+        
             // Handle mouse movement. delta contains the x and y movement of the mouse since last frame in pixels
             if let Ok(mut delta) = mouse_delta.lock() {
                 // == // Optionally access the acumulated mouse movement between
@@ -299,7 +486,53 @@ fn main() {
                 *delta = (0.0, 0.0); // reset when done
             }
 
+            /* 
+            let mut shader_matrix: glm::Mat4 = perspective * translate_z_index; // First we apply the perspective on the z-index translation matrix
+
+            // Perform the camera transformation before rendering
+            shader_matrix = glm::translate(&shader_matrix, &glm::vec3(x, 0.0, 0.0));
+            shader_matrix = glm::translate(&shader_matrix, &glm::vec3(0.0, y, 0.0));
+            shader_matrix = glm::translate(&shader_matrix, &glm::vec3(0.0, 0.0, z));
+
+            //shader_matrix = glm::rotation(x, &glm::vec3(1.0, 0.0, 0.0));
+            //shader_matrix = glm::rotation(y, &glm::vec3(0.0, 1.0, 0.0));
+            //shader_matrix = glm::rotation(z, &glm::vec3(0.0, 0.0, 1.0));
+
+
+            //shader_matrix = glm::rotation(pitch, &glm::vec3(1.0, 0.0, 0.0));
+
+            //shader_matrix = rotate_y * rotate_x * shader_matrix;
+
+            shader_matrix = glm::rotate(&shader_matrix, yaw.sin(), &glm::vec3(0.0, 1.0, 0.0));
+            shader_matrix = glm::rotate(&shader_matrix, pitch.sin(), &glm::vec3(1.0, 0.0, 0.0));
+            */
+
+
+
             // == // Please compute camera transforms here (exercise 2 & 3)
+
+            let matrix = glm::mat4(
+                1.0, 0.0, 0.0, x,
+                0.0, 1.0, 0.0, y,
+                0.0, 0.0, 1.0, z,
+                0.0, 0.0, 0.0, 1.0
+            );
+
+            let pitch_rotation: glm::Mat4 = glm::mat4(
+                    1.0, 0.0, 0.0, 0.0, 
+                    0.0, pitch.cos(), -pitch.sin(), 0.0, 
+                    0.0, pitch.sin(), pitch.cos(), 0.0, 
+                    0.0, 0.0, 0.0, 1.0,
+            );
+
+            let yaw_rotation: glm::Mat4 = glm::mat4(
+                    yaw.cos(), 0.0, yaw.sin(), 0.0, 
+                    0.0, 1.0, 0.0, 0.0, 
+                    -yaw.sin(), 0.0, yaw.cos(), 0.0, 
+                    0.0, 0.0, 0.0, 1.0,
+                );
+
+            let shader_matrix = perspective * yaw_rotation * pitch_rotation * matrix;
 
             unsafe {
                 // Clear the color and depth buffers
@@ -309,6 +542,9 @@ fn main() {
                 // == // Issue the necessary gl:: commands to draw your scene here
 
                 gl::BindVertexArray(vao_id);
+
+                gl::UniformMatrix4fv(2, 1, gl::FALSE, shader_matrix.as_ptr()); // layout (location = 2), pass 1 matrix
+
                 gl::DrawElements(
                     gl::TRIANGLES,
                     indices.len() as i32,
@@ -422,3 +658,5 @@ fn main() {
         }
     });
 }
+ 
+
